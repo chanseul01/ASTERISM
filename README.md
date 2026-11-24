@@ -1,6 +1,6 @@
 <div align="center">
 
-# ASTERISM:<br>Do Multimodal LLMs Actually Look at All the Images?
+# ✨ ASTERISM:<br>Do Multimodal LLMs Actually Look at All the Images?
 
 **Chanseul Cho** · **Dongwoo Kim** · **Noori Bae** · **Seungjae Moon** · **Seongsu Lee** · **Youngmin Ro**
 
@@ -25,7 +25,7 @@ Machine Intelligence Lab, University of Seoul
 
 Multi-image benchmarks aim to test whether a model combines evidence across images, but many of their items can be answered from a single image. Across about 33k items from 19 public benchmarks, our audit and a two-stage single-image filter find that one image or the question alone settles 24.2% of them, and MLLMs take this single-image shortcut.
 
-- **ASTERISM** keeps the items that need more than one image: 18.7k items under one format, one rule-based scorer and seven task categories, with every corrected label and every rewrite checked by a human reviewer.
+- **✨ ASTERISM** keeps the items that need more than one image: 18.7k items under one format, one rule-based scorer and seven task categories, with every corrected label and every rewrite checked by a human reviewer.
 - **CICA** (cross-image credit assignment) extends RLVR. For every token of a response, it compares the policy's likelihood under all images with its likelihood under the best single image, and moves credit toward the tokens that need more than one image. It keeps the data, the reward and the RL objective, and adds no parameters, rollouts or backward pass.
 
 ## Release
@@ -34,9 +34,9 @@ Multi-image benchmarks aim to test whether a model combines evidence across imag
 
 | Dataset | Items | Description | Link |
 |---|---:|---|:---:|
-| ASTERISM | 18,696 | Multi-image items from 19 public benchmarks that need more than one image | Coming soon |
-| ASTERISM-Lite | 400 | Hard subset of ASTERISM, verified one by one | Coming soon |
-| ASTERISM-Train | 49,105 | Training items with verifiable answers, with near-duplicates of ASTERISM images removed | Coming soon |
+| ✨ ASTERISM | 18,696 | Multi-image items from 19 public benchmarks that need more than one image | Coming soon |
+| ✨ ASTERISM-Lite | 400 | Hard subset of ASTERISM, verified one by one | Coming soon |
+| ✨ ASTERISM-Train | 49,105 | Training items with verifiable answers, with near-duplicates of ASTERISM images removed | Coming soon |
 
 ### Models
 
