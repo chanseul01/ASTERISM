@@ -28,6 +28,10 @@ Multi-image benchmarks aim to test whether a model combines evidence across imag
 - **✨ ASTERISM** keeps the items that need more than one image: 18.7k items under one format, one rule-based scorer and seven task categories, with every corrected label and every rewrite checked by a human reviewer.
 - **🌿 CICA** (cross-image credit assignment) extends RLVR. For every token of a response, it compares the policy's likelihood under all images with its likelihood under the best single image, and moves credit toward the tokens that need more than one image. It keeps the data, the reward and the RL objective, and adds no parameters, rollouts or backward pass.
 
+## Video
+
+https://github.com/user-attachments/assets/b212732a-7979-466c-a659-6df47425cae4
+
 ## Release
 
 ### Datasets
