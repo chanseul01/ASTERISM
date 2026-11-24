@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/lib/
+dist/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Data, checkpoints and outputs
+/data/raw/
+/data/images/
+/outputs/
+/checkpoints/
+/wandb/
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+
+# Downloaded datasets and partial files from assembling
+/data/ASTERISM*/
+*.part
