@@ -26,7 +26,7 @@ Machine Intelligence Lab, University of Seoul
 Multi-image benchmarks aim to test whether a model combines evidence across images, but many of their items can be answered from a single image. Across about 33k items from 19 public benchmarks, our audit and a two-stage single-image filter find that one image or the question alone settles 24.2% of them, and MLLMs take this single-image shortcut.
 
 - **✨ ASTERISM** keeps the items that need more than one image: 18.7k items under one format, one rule-based scorer and seven task categories, with every corrected label and every rewrite checked by a human reviewer.
-- **CICA** (cross-image credit assignment) extends RLVR. For every token of a response, it compares the policy's likelihood under all images with its likelihood under the best single image, and moves credit toward the tokens that need more than one image. It keeps the data, the reward and the RL objective, and adds no parameters, rollouts or backward pass.
+- **🌿 CICA** (cross-image credit assignment) extends RLVR. For every token of a response, it compares the policy's likelihood under all images with its likelihood under the best single image, and moves credit toward the tokens that need more than one image. It keeps the data, the reward and the RL objective, and adds no parameters, rollouts or backward pass.
 
 ## Release
 
@@ -42,10 +42,10 @@ Multi-image benchmarks aim to test whether a model combines evidence across imag
 
 | Model | Base model | ASTERISM (base → CICA) | Link |
 |---|---|:---:|:---:|
-| CICA-Qwen2.5-VL-7B | Qwen2.5-VL-7B-Instruct | 40.7 → 46.7 | Coming soon |
-| CICA-GLM-4.1V-9B-Thinking | GLM-4.1V-9B-Thinking | 58.7 → 61.3 | Coming soon |
-| CICA-Qwen3.5-9B | Qwen3.5-9B (thinking mode) | 65.7 → 70.6 | Coming soon |
-| CICA-Qwen3.8-27B | Qwen3.8-27B | – | Coming soon |
+| 🌿 CICA-Qwen2.5-VL-7B | Qwen2.5-VL-7B-Instruct | 40.7 → 46.7 | Coming soon |
+| 🌿 CICA-GLM-4.1V-9B-Thinking | GLM-4.1V-9B-Thinking | 58.7 → 61.3 | Coming soon |
+| 🌿 CICA-Qwen3.5-9B | Qwen3.5-9B (thinking mode) | 65.7 → 70.6 | Coming soon |
+| 🌿 CICA-Qwen3.8-27B | Qwen3.8-27B | – | Coming soon |
 
 ASTERISM scores are macro averages over the seven task categories.
 
