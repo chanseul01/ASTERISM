@@ -1,0 +1,8 @@
+# Assembling the items released as identifiers (versions we used, Python 3.11)
+Pillow==12.2.0
+PyMuPDF==1.28.2
+pyarrow==24.0.0
+numpy==1.26.4
+opencv-python-headless>=4.11,<4.12
+huggingface_hub>=0.34   # the hf command that build/get_asterism.sh uses to download the source releases
+matplotlib==3.10.9      # build/train only: its font file for drawn labels where DejaVu Sans is not installed

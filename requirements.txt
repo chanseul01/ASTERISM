@@ -1,0 +1,6 @@
+# Evaluation (versions we used, Python 3.12). Afterwards install Transformers 5.5.0 with
+# pip install transformers==5.5.0 (vLLM 0.18.0 pins an older version).
+torch==2.10.0
+vllm==0.18.0
+Pillow==12.3.0
+PyYAML==6.0.3

@@ -19,7 +19,8 @@ Machine Intelligence Lab, University of Seoul
 
 ## News
 
-- Code, datasets and model weights will be released soon.
+- The paper is on [arXiv](https://arxiv.org/abs/2611.32316).
+- The evaluation code and the build scripts are released. The datasets, the model weights and the CICA training code will follow soon.
 
 ## Overview
 
@@ -55,16 +56,57 @@ ASTERISM scores are macro averages over the seven task categories.
 
 ## Code
 
-Coming soon:
+| Folder | Content |
+|---|---|
+| [`asterism/`](asterism) | Prompts, the rule-based scorer and the evaluation runner for ASTERISM and ASTERISM-Lite |
+| [`build/`](build) | Scripts that assemble the items released as identifiers from the public releases of their sources |
+| [`configs/eval/`](configs/eval) | Settings of the paper for evaluating the three CICA models and their base models |
+| [`scripts/`](scripts) | `evaluate.py` and `score.py` |
 
-- `asterism/`: prompts, the rule-based scorer and evaluation runners for ASTERISM and ASTERISM-Lite
-- `cica/`: CICA training with the settings of the paper
-- `build/`: scripts that assemble the items of restricted sources from their public releases
+The CICA training code will be released soon.
+
+### Setup
+
+We used two separate environments. The evaluation environment (Python 3.12):
+
+```bash
+pip install -r requirements.txt
+pip install transformers==5.5.0   # the version we used; it replaces the older Transformers that vLLM 0.18.0 pins
+```
+
+The build environment for the items released as identifiers (Python 3.11):
+
+```bash
+pip install -r build/requirements.txt
+```
+
+With the package versions of `build/requirements.txt`, the build scripts reproduce our image files, and `python -m build.verify` checks each file against our checksums (see [build/README.md](build/README.md)).
+
+### Evaluation
+
+Download ASTERISM from Hugging Face into `data/ASTERISM/` (link coming soon). In the build environment, one command downloads the public releases of the seven sources released as identifiers (about 28 GB, no login needed), assembles their items and checks them against our checksums (see [build/README.md](build/README.md)):
+
+```bash
+bash build/get_asterism.sh data/ASTERISM
+```
+
+Then, in the evaluation environment, generate and score with the settings of each model in `configs/eval/`:
+
+```bash
+python scripts/evaluate.py --config configs/eval/cica-qwen3.5-9b.yaml --model path/to/CICA-Qwen3.5-9B \
+    --data data/ASTERISM/data/asterism_full.jsonl --out outputs/cica-qwen3.5-9b
+```
+
+Add `--lite` to evaluate the 400 items of ASTERISM-Lite. `scripts/score.py` scores an existing file of generations.
+
+### ASTERISM-Train
+
+The ASTERISM-Train items released as identifiers are assembled with the scripts in [`build/train/`](build/train) (see [build/train/README.md](build/train/README.md)).
 
 ## License
 
 - Code: [Apache License 2.0](LICENSE).
-- Our annotations (corrected labels and answer formats, rewritten items, per-item labels): CC BY 4.0.
+- Our annotations (corrected labels and answer formats, rewritten items, per-item labels): CC BY 4.0, except in items under a share-alike license, which carry that license.
 - Source items and images keep the license of their benchmark. See [DATA_LICENSE.md](DATA_LICENSE.md).
 - Model weights follow the license of their base models.
 

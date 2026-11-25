@@ -27,4 +27,5 @@ venv/
 
 # Downloaded datasets and partial files from assembling
 /data/ASTERISM*/
+/asterism_sources/
 *.part
