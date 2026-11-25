@@ -6,8 +6,8 @@
 
 Machine Intelligence Lab, University of Seoul
 
-[![Paper](https://img.shields.io/badge/Paper-coming%20soon-lightgrey)](#)
-[![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-b31b1b)](#)
+[![Paper](https://img.shields.io/badge/Paper-PDF-lightgrey)](https://arxiv.org/pdf/2611.32316)
+[![arXiv](https://img.shields.io/badge/arXiv-2611.32316-b31b1b)](https://arxiv.org/abs/2611.32316)
 [![Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-coming%20soon-yellow)](#datasets)
 [![Models](https://img.shields.io/badge/%F0%9F%A4%97%20Models-coming%20soon-yellow)](#models)
 
@@ -76,8 +76,8 @@ If you find this work useful, please consider citing:
 @article{asterism,
   title   = {ASTERISM: Do Multimodal LLMs Actually Look at All the Images?},
   author  = {Cho, Chanseul and Kim, Dongwoo and Bae, Noori and Moon, Seungjae and Lee, Seongsu and Ro, Youngmin},
-  journal = {arXiv preprint arXiv:XXXX.XXXXX},
-  year    = {XXXX}
+  journal = {arXiv preprint arXiv:2611.32316},
+  year    = {2026}
 }
 ```
 
