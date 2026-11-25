@@ -11,8 +11,9 @@ and write each item with its images.
 ## Quick start
 
 With the ASTERISM dataset (or ASTERISM-Lite) downloaded to `$DATA`, one command downloads the seven
-public releases at the revisions we used (about 28 GB, no login needed), assembles the items and checks
-them against our checksums:
+public releases at the revisions we used (about 28 GB to download, about 45 GB on disk once MileBench is
+extracted, no login needed), assembles the items (about 6 GB of images for ASTERISM) and checks them against
+our checksums:
 
 ```bash
 pip install -r build/requirements.txt
@@ -22,7 +23,9 @@ bash build/get_asterism.sh "$DATA"
 The releases go to `./asterism_sources` (a second argument chooses another folder), and a second run
 skips completed downloads. The records with every item filled in are written to
 `$DATA/data/asterism_full.jsonl` (`asterism_lite_full.jsonl` for ASTERISM-Lite), and the images under
-`$DATA/images/`. The sections below describe the same steps one by one.
+`$DATA/images/`. `LINK=1 bash build/get_asterism.sh "$DATA"` hard-links the MileBench image files instead of
+copying them (same file system only), which saves about 4 GB and much of the assembly time. The sections
+below describe the same steps one by one.
 
 ## 1. Download the public releases
 
@@ -33,7 +36,7 @@ Put each release in its own folder under one root folder, using the folder names
 | `milebench` | MileBench | [FreedomIntelligence/MileBench](https://huggingface.co/datasets/FreedomIntelligence/MileBench), `53c7a58051ef88bacf76541d91f03f5ba2d71e7d` | `MileBench_part0.tar.gz` to `MileBench_part5.tar.gz`, extracted in place |
 | `vlm2-bench` | VLM2-Bench | [Sterzhang/vlm2-bench](https://huggingface.co/datasets/Sterzhang/vlm2-bench), `188a97b9f52ef44316a260a0c3e90bf49d93ca5f` | `VLM2Bench_img.tsv` |
 | `m4bench` | M4Bench | [Anonymous8976/M4Bench](https://huggingface.co/datasets/Anonymous8976/M4Bench), `65ca74a18edd43921a479053265a3490157f612c` | `Detailed_Difference.tsv`, `Instance_Comparison.tsv`, `State_Comparison.tsv`, `State_Invariance.tsv` |
-| `mmlongbench-doc` | MMLongBench-Doc | [yubo2333/MMLongBench-Doc](https://huggingface.co/datasets/yubo2333/MMLongBench-Doc), `2ff6aa9237fc777b6627dc57a486e9225ac5fb86` | `data/train-00000-of-00001.parquet`, `documents/*.pdf` |
+| `mmlongbench-doc` | MMLongBench-Doc | [yubo2333/MMLongBench-Doc](https://huggingface.co/datasets/yubo2333/MMLongBench-Doc), `2ff6aa9237fc777b6627dc57a486e9225ac5fb86` | `data/train-00000-of-00001.parquet` and the `documents/*.pdf` that the records name (132 for ASTERISM) |
 | `marvl` | MaRVL | [floschne/marvl](https://huggingface.co/datasets/floschne/marvl), `d25b0dc0bce9d8e9b56bf666d3442dc907180667` | `data/*.parquet` |
 | `q-bench2` | Q-Bench2 | [q-future/q-bench2](https://huggingface.co/datasets/q-future/q-bench2), `c766b14f9a54205d8e06cf644441d745dc16f4e3` | `q-bench2-a1-dev.jsonl`, `all_single_images.zip` |
 | `emma` | EMMA | [luckychao/EMMA](https://huggingface.co/datasets/luckychao/EMMA), `6c87aec9048c489108170088e50b768646b5bcf9` | `Chemistry/`, `Coding/` and `Physics/test-00000-of-00001.parquet` |
@@ -41,10 +44,11 @@ Put each release in its own folder under one root folder, using the folder names
 The MileBench repository is the one linked from the MileBench code repository
 (github.com/MileBench/MileBench). Other revisions may work but are not checked.
 
-With `huggingface_hub` (0.34 or later, which provides the `hf` command):
+With `huggingface_hub` (0.34 or later, which provides the `hf` command), in bash:
 
 ```bash
 ROOT=/path/to/releases
+DATA=/path/to/ASTERISM   # the downloaded ASTERISM or ASTERISM-Lite dataset
 # get <repository> <revision> <folder> [<file pattern> ...]: one hf call per pattern, or the whole repository
 get() {
   local p
@@ -55,7 +59,11 @@ get FreedomIntelligence/MileBench 53c7a58051ef88bacf76541d91f03f5ba2d71e7d mileb
 for f in "$ROOT"/milebench/MileBench_part*.tar.gz; do tar xzf "$f" -C "$ROOT/milebench"; done
 get Sterzhang/vlm2-bench 188a97b9f52ef44316a260a0c3e90bf49d93ca5f vlm2-bench VLM2Bench_img.tsv
 get Anonymous8976/M4Bench 65ca74a18edd43921a479053265a3490157f612c m4bench "*.tsv"
-get yubo2333/MMLongBench-Doc 2ff6aa9237fc777b6627dc57a486e9225ac5fb86 mmlongbench-doc
+# MMLongBench-Doc: the QA table and the documents that the records name
+REC=$DATA/data/asterism.jsonl; [ -f "$REC" ] || REC=$DATA/data/asterism_lite.jsonl
+DOCS=$(python -c 'import json, sys; print(" ".join(sorted({x.split("#")[0] for l in open(sys.argv[1], encoding="utf-8") if l.strip() for r in [json.loads(l)] if r["source"] == "MMLongBench-Doc" and r["release"] == "identifiers" for x in r["images"]})))' "$REC") &&
+  hf download yubo2333/MMLongBench-Doc data/train-00000-of-00001.parquet $DOCS \
+    --repo-type dataset --revision 2ff6aa9237fc777b6627dc57a486e9225ac5fb86 --local-dir "$ROOT/mmlongbench-doc"
 get floschne/marvl d25b0dc0bce9d8e9b56bf666d3442dc907180667 marvl "data/*.parquet"
 get q-future/q-bench2 c766b14f9a54205d8e06cf644441d745dc16f4e3 q-bench2 q-bench2-a1-dev.jsonl all_single_images.zip
 get luckychao/EMMA 6c87aec9048c489108170088e50b768646b5bcf9 emma "*/test-00000-of-00001.parquet"
@@ -88,8 +96,12 @@ The evaluation code reads this file like the released one. For ASTERISM-Lite, pa
 `data/asterism_lite.jsonl` and its dataset folder. One source can be assembled alone (items of other sources that
 an earlier run filled in are kept), for example
 `--source MaRVL --release-dir "$ROOT/marvl"`. With `--link`, the MileBench image files are hard-linked
-instead of copied. The images take about 6 GB, of which 4 GB are MileBench files, and assembling
-all seven sources takes a few minutes, most of it for rendering the MMLongBench-Doc pages.
+instead of copied. The images take about 6 GB, of which 4 GB are MileBench files. Assembling all seven
+sources took about 20 minutes on our storage (about a minute for ASTERISM-Lite), most of it for copying the
+MileBench files and rendering the MMLongBench-Doc pages; extracting the MileBench archives on the first run
+took about 20 minutes more. While rendering, MuPDF prints lines such as
+"MuPDF error: syntax error: could not parse color space"; with the versions in build/requirements.txt, the
+rendered pages still match our checksums.
 
 For each item, the scripts
 - read the item by `source_id` (and `source_subset`) and write its prompt as the evaluation did: the

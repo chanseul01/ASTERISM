@@ -6,8 +6,9 @@
 #
 # <dataset folder> is the downloaded ASTERISM or ASTERISM-Lite dataset (it holds data/asterism.jsonl or
 # data/asterism_lite.jsonl). The assembled records are written to data/asterism_full.jsonl (or
-# data/asterism_lite_full.jsonl) and the images under images/ of that folder.
-# The source releases (about 28 GB) go to <folder for the source releases>, by default ./asterism_sources.
+# data/asterism_lite_full.jsonl) and the images under images/ of that folder (about 6 GB for ASTERISM).
+# The source releases (about 28 GB to download, about 45 GB on disk once MileBench is extracted) go to
+# <folder for the source releases>, by default ./asterism_sources.
 # Downloads that are already complete are skipped, so the command can be run again after an interruption.
 # LINK=1 hard-links the MileBench image files instead of copying them (same file system only).
 # SOURCES="EMMA M4Bench" limits the run to some sources (names as in build/README.md); items of other sources
@@ -16,6 +17,7 @@
 # when there is one.
 set -euo pipefail
 unset CDPATH
+case "${1:-}" in -h|--help) awk 'NR > 1 && /^#/ {sub(/^# ?/, ""); print; next} NR > 1 {exit}' < "$0"; exit 0 ;; esac
 
 DATA=${1:?usage: bash build/get_asterism.sh <dataset folder> [<folder for the source releases>]}
 ROOT=${2:-asterism_sources}
@@ -83,6 +85,21 @@ get() {
   fi
 }
 
+# read every record before any download; for MMLongBench-Doc, list the documents that the records name
+LIST=$("$PY" -c 'import json, sys
+names = set()
+for line in open(sys.argv[1], encoding="utf-8"):
+    if line.strip():
+        r = json.loads(line)
+        if r["source"] == "MMLongBench-Doc" and r["release"] == "identifiers":
+            names.update(ref.split("#")[0] for ref in r["images"])
+for name in sorted(names):
+    print(name)' "$RECORDS")
+DOCS=()
+while IFS= read -r d; do
+  if [ -n "$d" ]; then DOCS+=("$d"); fi
+done <<< "$LIST"
+
 for s in "${SRCS[@]}"; do
   echo "== download $s"
   case "$s" in
@@ -90,6 +107,7 @@ for s in "${SRCS[@]}"; do
       get FreedomIntelligence/MileBench 53c7a58051ef88bacf76541d91f03f5ba2d71e7d milebench "MileBench_part*.tar.gz"
       for f in "$ROOT"/milebench/MileBench_part*.tar.gz; do
         [ -e "$f.extracted" ] && continue
+        echo "   extract $(basename "$f")"
         tar xzf "$f" -C "$ROOT/milebench"
         touch "$f.extracted"
       done ;;
@@ -98,7 +116,11 @@ for s in "${SRCS[@]}"; do
     M4Bench)
       get Anonymous8976/M4Bench 65ca74a18edd43921a479053265a3490157f612c m4bench "*.tsv" ;;
     MMLongBench-Doc)
-      get yubo2333/MMLongBench-Doc 2ff6aa9237fc777b6627dc57a486e9225ac5fb86 mmlongbench-doc ;;
+      # the QA table and the documents that the records use, in one call (positional file names work with every
+      # version of hf); a download of the whole repository would also fetch documents that no item uses
+      echo "   ${#DOCS[@]} documents"
+      "$HF" download yubo2333/MMLongBench-Doc data/train-00000-of-00001.parquet ${DOCS[@]+"${DOCS[@]}"} \
+        --repo-type dataset --revision 2ff6aa9237fc777b6627dc57a486e9225ac5fb86 --local-dir "$ROOT/mmlongbench-doc" ;;
     MaRVL)
       get floschne/marvl d25b0dc0bce9d8e9b56bf666d3442dc907180667 marvl "data/*.parquet" ;;
     Q-Bench2)

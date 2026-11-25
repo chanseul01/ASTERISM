@@ -44,7 +44,7 @@ def score_run(records, generations, out_dir, lite=False):
         print(f"warning: {len(records)} of the {expected} items of {summary['benchmark']}", file=sys.stderr)
         summary["benchmark"] += f" (subset: {len(records)} of {expected} items)"
     summary["scorer_version"] = __version__
-    with open(os.path.join(out_dir, f"summary{sfx}.json"), "w") as f:
+    with open(os.path.join(out_dir, f"summary{sfx}.json"), "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=1)
     print(format_summary(summary))
     print(f"{summary['n']} items, no valid answer {summary['invalid']:.2f}%, token limit reached {summary['unfinished']}")
@@ -58,6 +58,9 @@ def main(argv=None):
     ap.add_argument("--lite", action="store_true", help="score the 400 items of ASTERISM-Lite")
     ap.add_argument("--out", default=None, help="output folder (default: the folder of --generations)")
     a = ap.parse_args(argv)
+    for p in (a.data, a.generations):
+        if not os.path.exists(p) or os.path.isdir(p):
+            sys.exit(f"error: no file {p}")
     records = load_records(a.data, lite=a.lite)
     a.lite = a.lite or all(r.get("in_lite") for r in records)  # a file of ASTERISM-Lite records
     try:

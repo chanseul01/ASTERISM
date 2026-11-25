@@ -71,7 +71,7 @@ We used two separate environments. The evaluation environment (Python 3.12):
 
 ```bash
 pip install -r requirements.txt
-pip install transformers==5.5.0   # the version we used; it replaces the older Transformers that vLLM 0.18.0 pins
+pip install transformers==5.5.0   # the version we used; it replaces the older Transformers that vLLM 0.18.0 pins (pip reports this conflict)
 ```
 
 The build environment for the items released as identifiers (Python 3.11):
@@ -84,7 +84,7 @@ With the package versions of `build/requirements.txt`, the build scripts reprodu
 
 ### Evaluation
 
-Download [ASTERISM](https://huggingface.co/datasets/seul77/ASTERISM) into `data/ASTERISM/` with `hf download seul77/ASTERISM --repo-type dataset --local-dir data/ASTERISM`. In the build environment, one command downloads the public releases of the seven sources released as identifiers (about 28 GB, no login needed), assembles their items and checks them against our checksums (see [build/README.md](build/README.md)):
+Download [ASTERISM](https://huggingface.co/datasets/seul77/ASTERISM) into `data/ASTERISM/` with `hf download seul77/ASTERISM --repo-type dataset --local-dir data/ASTERISM`; it holds about 50,500 files (9.2 GB), so this can take a few hours. In the build environment, one command downloads the public releases of the seven sources released as identifiers (about 28 GB to download, about 45 GB on disk, and 6 GB for the assembled images; no login needed), assembles their items and checks them against our checksums (see [build/README.md](build/README.md)):
 
 ```bash
 bash build/get_asterism.sh data/ASTERISM
@@ -99,7 +99,7 @@ python scripts/evaluate.py --config configs/eval/cica-qwen3.5-9b.yaml \
 
 The configs of the CICA models load the released checkpoints from Hugging Face, and `--model` evaluates a local copy instead. The configs keep the batch sizes of our runs; a smaller `--batch-size` needs less host memory.
 
-Add `--lite` to evaluate the 400 items of ASTERISM-Lite. `scripts/score.py` scores an existing file of generations.
+Add `--lite` to evaluate the 400 items of ASTERISM-Lite. ASTERISM-Lite can also be used on its own: download `seul77/ASTERISM-Lite` into `data/ASTERISM-Lite` and run `bash build/get_asterism.sh data/ASTERISM-Lite` (it needs the same source releases), then evaluate with `--data data/ASTERISM-Lite/data/asterism_lite_full.jsonl`. `scripts/score.py` scores an existing file of generations.
 
 ### ASTERISM-Train
 

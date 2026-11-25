@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 from asterism.data import check_complete, load_records, read_jsonl  # noqa: E402
-from asterism.runner import environment, load_config, read_rows  # noqa: E402
+from asterism.runner import environment, load_config, read_rows, resolve_images  # noqa: E402
 from score import score_run  # noqa: E402
 
 
@@ -50,6 +50,9 @@ def input_digest(record):
 
 def main(argv=None):
     a = parse_args(argv)
+    for p in (a.config, a.data):
+        if not os.path.exists(p) or os.path.isdir(p):
+            sys.exit(f"error: no file {p}")
     cfg = load_config(a.config)
     if a.model:
         if cfg["processor"] == cfg["model"]:  # the processor follows the model unless the config names its own
@@ -71,13 +74,14 @@ def main(argv=None):
     except ValueError as e:
         sys.exit(f"error: {e}")
     image_root = a.image_root or os.path.dirname(os.path.dirname(os.path.abspath(a.data)))
-    os.makedirs(a.out, exist_ok=True)
+    if not os.path.isdir(image_root):
+        sys.exit(f"error: no folder {image_root}; set --image-root")
     gen_path, info_path = os.path.join(a.out, "generations.jsonl"), os.path.join(a.out, "run_info.json")
     inputs = {r["id"]: input_digest(r) for r in records}
     if os.path.isfile(gen_path) and os.path.getsize(gen_path):  # resume only for the same model, settings and inputs
         runtime = ("gpu_memory_utilization", "batch_size")
         try:
-            with open(info_path) as f:
+            with open(info_path, encoding="utf-8") as f:
                 before_info = json.load(f)
             before, before_inputs = before_info["config"], dict(before_info["inputs"])
             differ = sorted(k for k in set(before) | set(cfg) if k not in runtime and before.get(k) != cfg.get(k))
@@ -92,9 +96,16 @@ def main(argv=None):
                      f"(e.g. {changed[0]}); choose another --out")
         before_inputs.update(inputs)
         inputs = before_inputs
+    done = {r["id"] for r in read_rows(gen_path)}  # the runner skips these and reads the first max_images images of the rest
+    missing = [(r["id"], p) for r in records if r["id"] not in done
+               for p in resolve_images(r, image_root)[:cfg["max_images"]] if not os.path.isfile(p)]
+    if missing:
+        sys.exit(f"error: {len(missing)} images are not files (e.g. {missing[0][0]}: {missing[0][1]}); assemble the items "
+                 "of identifier-only sources with build/get_asterism.sh first, or set --image-root")
+    os.makedirs(a.out, exist_ok=True)
     info = {"config": cfg, "config_file": os.path.abspath(a.config), "data": os.path.abspath(a.data), "lite": a.lite,
             "items": len(records), "environment": environment(), "inputs": inputs}
-    with open(info_path + ".part", "w") as f:
+    with open(info_path + ".part", "w", encoding="utf-8") as f:
         json.dump(info, f, indent=1)
     os.replace(info_path + ".part", info_path)
     from asterism.runner import Runner

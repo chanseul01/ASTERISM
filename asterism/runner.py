@@ -60,7 +60,7 @@ def item_seed(item_id):
 
 def load_config(path):
     import yaml
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     unknown = set(cfg) - set(DEFAULTS) - {"name", "model", "sampling"}
     if unknown:
@@ -110,7 +110,7 @@ def resolve_images(record, image_root):
 def read_rows(path):
     rows = []
     if os.path.exists(path):
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             rows = [json.loads(l) for l in f if l.strip()]
     return rows
 
@@ -151,7 +151,7 @@ class Runner:
         todo = [r for r in records if r["id"] not in done]
         n_cut = sum(len(r["images"]) > self.cfg["max_images"] for r in todo)
         t0 = time.time()
-        with open(out_path, "a") as w:
+        with open(out_path, "a", encoding="utf-8") as w:
             for b0 in range(0, len(todo), self.cfg["batch_size"]):
                 chunk = todo[b0:b0 + self.cfg["batch_size"]]
                 reqs = []
