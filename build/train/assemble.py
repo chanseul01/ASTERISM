@@ -1,6 +1,6 @@
 """Assemble the ASTERISM-Train items of the identifier sources.
 
-    python -m build.train.assemble --records ASTERISM-Train/data/asterism_train.jsonl --out ASTERISM-Train \
+    python -m build.train.assemble --records data/ASTERISM-Train/data/asterism_train.jsonl --out data/ASTERISM-Train \
         --m4 $ROOT/m4-instruct --mantis $ROOT/mantis-instruct --leopard $ROOT/leopard-instruct \
         --mgrounding $ROOT/mgrounding --spair $ROOT/spair --parquet-images $ROOT/parquet-images \
         --nlvr2 $ROOT/nlvr2 --star $ROOT/star --spot-the-diff $ROOT/spot-the-diff --clevr-change $ROOT/clevr-change
@@ -128,15 +128,15 @@ def main(argv=None):
                 print(f"{r['id']}: {type(e).__name__}: {e}", file=sys.stderr)
         print(f"{name}: {done}/{len(positions)} items in {time.time() - t0:.0f}s")
 
-    os.makedirs(os.path.join(args.out, "data"), exist_ok=True)
     path = os.path.join(args.out, "data", "asterism_train_full.jsonl")
+    if failures:
+        sys.exit(f"{failures} items failed; {path} is left as it was")
+    os.makedirs(os.path.join(args.out, "data"), exist_ok=True)
     with open(path + ".part", "w", encoding="utf-8") as f:
         for r in out:
             f.write(json.dumps({k: r[k] for k in FIELDS}, ensure_ascii=False) + "\n")
     os.replace(path + ".part", path)
     print(f"wrote {path} ({len(out)} records)")
-    if failures:
-        sys.exit(f"{failures} items failed")
 
 
 if __name__ == "__main__":

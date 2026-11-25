@@ -10,16 +10,22 @@
 # The source releases (about 28 GB) go to <folder for the source releases>, by default ./asterism_sources.
 # Downloads that are already complete are skipped, so the command can be run again after an interruption.
 # LINK=1 hard-links the MileBench image files instead of copying them (same file system only).
-# SOURCES="EMMA M4Bench" limits the run to some sources (names as in build/README.md); the written records
-# then hold only the items of these sources filled in, and a run without SOURCES fills in every item.
-# PYTHON selects the interpreter of the build environment (default: python).
+# SOURCES="EMMA M4Bench" limits the run to some sources (names as in build/README.md); items of other sources
+# that an earlier run filled in are kept, and only the selected sources are checked.
+# PYTHON selects the interpreter of the build environment (default: python); the hf command next to it is used
+# when there is one.
 set -euo pipefail
+unset CDPATH
 
 DATA=${1:?usage: bash build/get_asterism.sh <dataset folder> [<folder for the source releases>]}
 ROOT=${2:-asterism_sources}
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 DATA=$(cd "$DATA" && pwd)
 PY=${PYTHON:-python}
+case "$PY" in
+  */*) PY=$(cd "$(dirname "$PY")" && pwd)/$(basename "$PY") ;;  # a relative path keeps working after cd
+esac
+command -v "$PY" > /dev/null || { echo "PYTHON not found: $PY" >&2; exit 2; }
 
 if [ -f "$DATA/data/asterism.jsonl" ]; then
   RECORDS=$DATA/data/asterism.jsonl
@@ -31,18 +37,32 @@ else
 fi
 
 ALL="MileBench VLM2-Bench M4Bench MMLongBench-Doc MaRVL Q-Bench2 EMMA"
-SOURCES=${SOURCES:-$ALL}
-for s in $SOURCES; do
+read -r -d '' -a REQUESTED <<< "${SOURCES:-$ALL}" || true  # split on blanks and newlines, no file-name expansion
+SRCS=()
+for s in ${REQUESTED[@]+"${REQUESTED[@]}"}; do
   case " $ALL " in
     *" $s "*) ;;
     *) echo "unknown source $s (one of: $ALL)" >&2; exit 2 ;;
   esac
+  case " ${SRCS[*]-} " in
+    *" $s "*) ;;
+    *) SRCS+=("$s") ;;
+  esac
 done
+[ ${#SRCS[@]} -gt 0 ] || { echo "SOURCES names no source (one of: $ALL)" >&2; exit 2; }
 
 # check the build environment before downloading
-command -v hf > /dev/null || { echo "the hf command is missing: pip install -r build/requirements.txt" >&2; exit 2; }
-(cd "$REPO" && "$PY" -c 'import build.assemble, build.verify, PIL, pyarrow.parquet, importlib.util as u
-assert u.find_spec("pymupdf") or u.find_spec("fitz"), "PyMuPDF is missing"') \
+HF=hf
+PYBIN=$(command -v "$PY" || true)
+if [ -n "$PYBIN" ] && [ -x "$(dirname "$PYBIN")/hf" ]; then
+  HF=$(dirname "$PYBIN")/hf
+fi
+command -v "$HF" > /dev/null || { echo "the hf command is missing: pip install -r build/requirements.txt" >&2; exit 2; }
+(cd "$REPO" && "$PY" -c 'import build.assemble, build.verify, PIL.Image, pyarrow.parquet
+try:
+    import pymupdf
+except ImportError:
+    import fitz') \
   || { echo "the build environment lacks a package: pip install -r build/requirements.txt (or set PYTHON)" >&2; exit 2; }
 
 mkdir -p "$ROOT"
@@ -55,14 +75,15 @@ get() {
   local repo=$1 rev=$2 dir=$3 p
   shift 3
   if [ $# -eq 0 ]; then
-    hf download "$repo" --repo-type dataset --revision "$rev" --local-dir "$ROOT/$dir"
+    "$HF" download "$repo" --repo-type dataset --revision "$rev" --local-dir "$ROOT/$dir"
+  else
+    for p in "$@"; do
+      "$HF" download "$repo" --repo-type dataset --revision "$rev" --local-dir "$ROOT/$dir" --include "$p"
+    done
   fi
-  for p in "$@"; do
-    hf download "$repo" --repo-type dataset --revision "$rev" --local-dir "$ROOT/$dir" --include "$p"
-  done
 }
 
-for s in $SOURCES; do
+for s in "${SRCS[@]}"; do
   echo "== download $s"
   case "$s" in
     MileBench)
@@ -89,14 +110,14 @@ done
 
 cd "$REPO"
 ARGS=()
-for s in $SOURCES; do ARGS+=(--source "$s"); done
+for s in "${SRCS[@]}"; do ARGS+=(--source "$s"); done
 [ "${LINK:-0}" = 1 ] && ARGS+=(--link)
 echo "== assemble"
 "$PY" -m build.assemble "${ARGS[@]}" --release-root "$ROOT" --records "$RECORDS" --out "$DATA"
 FULL=$DATA/data/$(basename "$RECORDS" .jsonl)_full.jsonl
 echo "== check against build/checksums"
 VARGS=()
-[ "$SOURCES" = "$ALL" ] || for s in $SOURCES; do VARGS+=(--source "$s"); done
+[ ${#SRCS[@]} -eq 7 ] || for s in "${SRCS[@]}"; do VARGS+=(--source "$s"); done
 "$PY" -m build.verify --records "$FULL" ${VARGS[@]+"${VARGS[@]}"}
-[ "$SOURCES" = "$ALL" ] || echo "note: only the items of $SOURCES are filled in; run without SOURCES to fill in every item"
+[ ${#SRCS[@]} -eq 7 ] || echo "note: checked only ${SRCS[*]}; run without SOURCES to assemble and check every source"
 echo "done: $FULL"

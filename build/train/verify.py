@@ -1,13 +1,13 @@
 """Check assembled ASTERISM-Train items against the checksums of the released items.
 
-    python -m build.train.verify --records ASTERISM-Train/data/asterism_train_full.jsonl
+    python -m build.train.verify --records data/ASTERISM-Train/data/asterism_train_full.jsonl
 
 For each identifier item with an entry in build/train/checksums.jsonl, the sha256 of the canonical JSON of prompt,
 options and answer is compared with the entry, and so is the sha256 of each image file. Images that the scripts
 store as JPEG (entries marked reencoded) depend on the Pillow and libjpeg versions and are counted on their own
 line. The check fails when an expected item has no text, when the number of images differs, when text or an image
-that should match does not, when an item of the checksums is missing from the records, when an item id repeats, or
-when no item is checked.
+that should match does not, when an item of the checksums is missing from the records or an identifier record has
+no checksum, when an item id repeats, or when no item is checked.
 """
 import argparse
 import collections
@@ -38,20 +38,26 @@ def main(argv=None):
     ap.add_argument("--checksums", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "checksums.jsonl"))
     args = ap.parse_args(argv)
     root = args.root or os.path.dirname(os.path.dirname(os.path.abspath(args.records)))
+    sums = {}
     with open(args.checksums, encoding="utf-8") as f:
-        sums = {row["id"]: row for row in map(json.loads, f)}
+        for row in (json.loads(line) for line in f if line.strip()):
+            if row["id"] in sums:
+                sys.exit(f"{args.checksums}: checksum id {row['id']} repeated")
+            sums[row["id"]] = row
 
     count = collections.defaultdict(collections.Counter)
     skipped, failed, seen = collections.Counter(), collections.Counter(), collections.Counter()
+    identifier_ids = set()
     with open(args.records, encoding="utf-8") as f:
-        for r in map(json.loads, f):
+        for r in (json.loads(line) for line in f if line.strip()):
             seen[r["id"]] += 1
             want = sums.get(r["id"])
             if r["release"] != "identifiers":
                 skipped["released with images"] += 1
                 continue
+            identifier_ids.add(r["id"])
             if want is None:
-                skipped["identifier item without a checksum entry"] += 1
+                failed["identifier item without a checksum entry"] += 1
                 continue
             name = r["source"] if r["group"] != "synthetic" else "synthetic"
             c = count[name]
@@ -83,8 +89,8 @@ def main(argv=None):
                     if not ok:
                         failed["image differs"] += 1
     checked = sum(c["items"] for c in count.values())
-    if sums.keys() - seen.keys():
-        failed["expected item missing from the records"] += len(sums.keys() - seen.keys())
+    if sums.keys() - identifier_ids:
+        failed["expected item missing from the records"] += len(sums.keys() - identifier_ids)
     if any(n > 1 for n in seen.values()):
         failed["item id repeated"] += sum(n > 1 for n in seen.values())
     if not checked:

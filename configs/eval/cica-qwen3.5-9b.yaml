@@ -1,6 +1,6 @@
 # CICA-Qwen3.5-9B in thinking mode. Same settings as its base model. The checkpoint includes its processor.
 name: CICA-Qwen3.5-9B
-model: checkpoints/CICA-Qwen3.5-9B  # local path or Hugging Face id (or pass --model)
+model: seul77/CICA-Qwen3.5-9B  # Hugging Face id or local path (or pass --model)
 enable_thinking: true
 per_item_seed: true
 sampling:

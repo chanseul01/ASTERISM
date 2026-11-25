@@ -7,7 +7,8 @@ and scoring is compared with build/checksums/<source>.jsonl, and so is the sha25
 Rendered PDF pages (MMLongBench-Doc) and re-encoded JPEG images (EMMA) depend on the PyMuPDF and
 Pillow versions, so a different digest of these files is reported but does not make the check fail.
 A missing image file or a different number of images fails the check for every source, and so do a
-repeated item id, an item of the checksums that ASTERISM records lack, and a run that checks no item.
+repeated item id, an item of the checksums missing from ASTERISM records (ASTERISM-Lite holds a subset), an
+identifier record of an unknown source, and a run that checks no item.
 """
 import argparse
 import collections
@@ -26,11 +27,16 @@ def load_checksums(folder):
     """Checksum rows by item id, and the item ids of each source."""
     sums, ids = {}, collections.defaultdict(set)
     for path in sorted(glob.glob(os.path.join(folder, "*.jsonl"))):
-        name = SLUGS[os.path.splitext(os.path.basename(path))[0]].NAME
+        slug = os.path.splitext(os.path.basename(path))[0]
+        if slug not in SLUGS:
+            sys.exit(f"unknown checksum file {path} (one file per source: {', '.join(SLUGS)})")
+        name = SLUGS[slug].NAME
         with open(path, encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     row = json.loads(line)
+                    if row["id"] in sums:
+                        sys.exit(f"{path}: checksum id {row['id']} repeated")
                     sums[row["id"]] = row
                     ids[name].add(row["id"])
     return sums, ids
@@ -54,14 +60,16 @@ def main(argv=None):
     full_set = any(not r["in_lite"] for r in records)  # ASTERISM, not ASTERISM-Lite: every checksum item is expected
 
     count = collections.defaultdict(collections.Counter)
+    checked = collections.defaultdict(set)  # ids of the identifier records checked, per source
     for r in records:
         if r["release"] != "identifiers" or (only and r["source"] not in only):
             continue
         c = count[r["source"]]
-        want = sums.get(r["id"])
+        want = sums.get(r["id"]) if r["id"] in source_ids.get(r["source"], ()) else None
         if want is None:
             c["unknown"] += 1
             continue
+        checked[r["source"]].add(r["id"])
         c["items"] += 1
         c["text"] += r["prompt"] is not None and text_digest(r) == want["text"]
         if len(r["images"]) != len(want["images"]):
@@ -81,7 +89,7 @@ def main(argv=None):
         if only and name not in only:
             continue
         c = count[name]
-        absent = len(source_ids[name] - seen.keys()) if full_set else 0
+        absent = len(source_ids[name] - checked[name]) if full_set else 0
         if not c and not absent:
             continue
         line = f"{name:16s} text {c['text']}/{c['items']}  images {c['images_ok']}/{c['images']}"
@@ -99,6 +107,9 @@ def main(argv=None):
             print(f"{'':16s} {c['unknown']} items without a checksum")
     total = sum(c["items"] for c in count.values())
     print(f"{'all':16s} text {sum(c['text'] for c in count.values())}/{total}")
+    for name in sorted(set(count) - set(SOURCES)):
+        print(f"{name}: {sum(count[name].values())} identifier records of an unknown source")
+        failed = True
     repeated = sum(n > 1 for n in seen.values())
     if repeated:
         print(f"{repeated} item ids appear more than once in the records")

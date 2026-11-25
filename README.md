@@ -8,8 +8,8 @@ Machine Intelligence Lab, University of Seoul
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-lightgrey)](https://arxiv.org/pdf/2611.32316)
 [![arXiv](https://img.shields.io/badge/arXiv-2611.32316-b31b1b)](https://arxiv.org/abs/2611.32316)
-[![Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-coming%20soon-yellow)](#datasets)
-[![Models](https://img.shields.io/badge/%F0%9F%A4%97%20Models-coming%20soon-yellow)](#models)
+[![Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-Hugging%20Face-yellow)](#datasets)
+[![Models](https://img.shields.io/badge/%F0%9F%A4%97%20Models-Hugging%20Face-yellow)](#models)
 
 </div>
 
@@ -20,7 +20,7 @@ Machine Intelligence Lab, University of Seoul
 ## News
 
 - The paper is on [arXiv](https://arxiv.org/abs/2611.32316).
-- The evaluation code and the build scripts are released. The datasets, the model weights and the CICA training code will follow soon.
+- The datasets and the model weights are on Hugging Face, and the evaluation code and the build scripts are in this repository. The CICA training code will follow soon.
 
 ## Overview
 
@@ -39,17 +39,17 @@ https://github.com/user-attachments/assets/b212732a-7979-466c-a659-6df47425cae4
 
 | Dataset | Items | Description | Link |
 |---|---:|---|:---:|
-| ✨ ASTERISM | 18,696 | Multi-image items from 19 public benchmarks that need more than one image | Coming soon |
-| ✨ ASTERISM-Lite | 400 | Hard subset of ASTERISM, verified one by one | Coming soon |
-| ✨ ASTERISM-Train | 49,105 | Training items with verifiable answers, with near-duplicates of ASTERISM images removed | Coming soon |
+| ✨ ASTERISM | 18,696 | Multi-image items from 19 public benchmarks that need more than one image | [🤗 Hugging Face](https://huggingface.co/datasets/seul77/ASTERISM) |
+| ✨ ASTERISM-Lite | 400 | Hard subset of ASTERISM, verified one by one | [🤗 Hugging Face](https://huggingface.co/datasets/seul77/ASTERISM-Lite) |
+| ✨ ASTERISM-Train | 49,105 | Training items with verifiable answers, with near-duplicates of ASTERISM images removed | [🤗 Hugging Face](https://huggingface.co/datasets/seul77/ASTERISM-Train) |
 
 ### Models
 
 | Model | Base model | ASTERISM (base → CICA) | Link |
 |---|---|:---:|:---:|
-| 🌿 CICA-Qwen2.5-VL-7B | Qwen2.5-VL-7B-Instruct | 40.7 → 46.7 | Coming soon |
-| 🌿 CICA-GLM-4.1V-9B-Thinking | GLM-4.1V-9B-Thinking | 58.7 → 61.3 | Coming soon |
-| 🌿 CICA-Qwen3.5-9B | Qwen3.5-9B (thinking mode) | 65.7 → 70.6 | Coming soon |
+| 🌿 CICA-Qwen2.5-VL-7B | Qwen2.5-VL-7B-Instruct | 40.7 → 46.7 | [🤗 Hugging Face](https://huggingface.co/seul77/CICA-Qwen2.5-VL-7B) |
+| 🌿 CICA-GLM-4.1V-9B-Thinking | GLM-4.1V-9B-Thinking | 58.7 → 61.3 | [🤗 Hugging Face](https://huggingface.co/seul77/CICA-GLM-4.1V-9B-Thinking) |
+| 🌿 CICA-Qwen3.5-9B | Qwen3.5-9B (thinking mode) | 65.7 → 70.6 | [🤗 Hugging Face](https://huggingface.co/seul77/CICA-Qwen3.5-9B) |
 | 🌿 CICA-Qwen3.8-27B | Qwen3.8-27B | – | Coming soon |
 
 ASTERISM scores are macro averages over the seven task categories.
@@ -80,11 +80,11 @@ The build environment for the items released as identifiers (Python 3.11):
 pip install -r build/requirements.txt
 ```
 
-With the package versions of `build/requirements.txt`, the build scripts reproduce our image files, and `python -m build.verify` checks each file against our checksums (see [build/README.md](build/README.md)).
+With the package versions of `build/requirements.txt`, the build scripts reproduce our image files, and `python -m build.verify` checks the assembled items against our checksums (see [build/README.md](build/README.md)).
 
 ### Evaluation
 
-Download ASTERISM from Hugging Face into `data/ASTERISM/` (link coming soon). In the build environment, one command downloads the public releases of the seven sources released as identifiers (about 28 GB, no login needed), assembles their items and checks them against our checksums (see [build/README.md](build/README.md)):
+Download [ASTERISM](https://huggingface.co/datasets/seul77/ASTERISM) into `data/ASTERISM/` with `hf download seul77/ASTERISM --repo-type dataset --local-dir data/ASTERISM`. In the build environment, one command downloads the public releases of the seven sources released as identifiers (about 28 GB, no login needed), assembles their items and checks them against our checksums (see [build/README.md](build/README.md)):
 
 ```bash
 bash build/get_asterism.sh data/ASTERISM
@@ -93,9 +93,11 @@ bash build/get_asterism.sh data/ASTERISM
 Then, in the evaluation environment, generate and score with the settings of each model in `configs/eval/`:
 
 ```bash
-python scripts/evaluate.py --config configs/eval/cica-qwen3.5-9b.yaml --model path/to/CICA-Qwen3.5-9B \
+python scripts/evaluate.py --config configs/eval/cica-qwen3.5-9b.yaml \
     --data data/ASTERISM/data/asterism_full.jsonl --out outputs/cica-qwen3.5-9b
 ```
+
+The configs of the CICA models load the released checkpoints from Hugging Face, and `--model` evaluates a local copy instead. The configs keep the batch sizes of our runs; a smaller `--batch-size` needs less host memory.
 
 Add `--lite` to evaluate the 400 items of ASTERISM-Lite. `scripts/score.py` scores an existing file of generations.
 
@@ -106,7 +108,7 @@ The ASTERISM-Train items released as identifiers are assembled with the scripts 
 ## License
 
 - Code: [Apache License 2.0](LICENSE).
-- Our annotations (corrected labels and answer formats, rewritten items, per-item labels): CC BY 4.0, except in items under a share-alike license, which carry that license.
+- Our annotations (corrected labels and answer formats, rewritten items, per-item labels): CC BY 4.0, except in the items whose `license` is CC BY-NC-SA 4.0, which carry that license.
 - Source items and images keep the license of their benchmark. See [DATA_LICENSE.md](DATA_LICENSE.md).
 - Model weights follow the license of their base models.
 

@@ -1,6 +1,6 @@
 # CICA-GLM-4.1V-9B-Thinking. Same settings as its base model. The checkpoint includes its processor.
 name: CICA-GLM-4.1V-9B-Thinking
-model: checkpoints/CICA-GLM-4.1V-9B-Thinking  # local path or Hugging Face id (or pass --model)
+model: seul77/CICA-GLM-4.1V-9B-Thinking  # Hugging Face id or local path (or pass --model)
 sampling:
   temperature: 0.0
   max_tokens: 16384

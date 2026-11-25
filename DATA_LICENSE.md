@@ -6,7 +6,7 @@ ASTERISM keeps the license of each source benchmark.
 - For sources with non-commercial terms or without a stated license, we release the item identifiers, our corrections and rewritten questions and options, and build scripts that assemble the items from the public release of each source.
 - Where the dataset card and the repository or paper of a source state different licenses, we follow the more restrictive one.
 
-Our annotations (corrected labels and answer formats, rewritten items and per-item labels) are released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), except in items under a share-alike license, which carry that license. Images and other source content keep the license of their source.
+Our annotations (corrected labels and answer formats, rewritten items and per-item labels) are released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), except in the 96 items whose `license` is CC BY-NC-SA 4.0 (MuirBench items from IconQA and ISVQA), which carry that license. Images and other source content keep the license of their source.
 
 Some items carry a license other than that of their source, or further terms of their source or of the dataset their images come from. Each record gives these in `license`, `image_origin` and `use_terms`, and the ASTERISM dataset card lists them.
 
@@ -44,7 +44,7 @@ Images keep the licenses of the datasets they come from.
 
 ## ASTERISM-Train sources
 
-ASTERISM-Train follows the same rule for its 48 sources. The license and the release mode of each source are listed on the ASTERISM-Train dataset card. Items from M4-Instruct are also subject to the terms on the M4-Instruct dataset card, and items from RAVEN keep the GPL-3.0 of RAVEN. Our annotations, including the synthetic items, are released under CC BY 4.0.
+ASTERISM-Train follows the same rule for its 48 sources. The license and the release mode of each source are listed on the ASTERISM-Train dataset card. Items from M4-Instruct, including the WebQA items taken from it, are also subject to the terms on the M4-Instruct dataset card, and items from RAVEN keep the GPL-3.0 of RAVEN. Our annotations, including the synthetic items, are released under CC BY 4.0, except in the 2,499 items whose `license` is CC BY-NC-SA 4.0 (IconQA and nuScenes), which carry that license.
 
 ## Intended use
 

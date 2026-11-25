@@ -48,8 +48,8 @@ ROOT=/path/to/releases
 # get <repository> <revision> <folder> [<file pattern> ...]: one hf call per pattern, or the whole repository
 get() {
   local p
-  [ $# -gt 3 ] || hf download "$1" --repo-type dataset --revision "$2" --local-dir "$ROOT/$3"
-  for p in "${@:4}"; do hf download "$1" --repo-type dataset --revision "$2" --local-dir "$ROOT/$3" --include "$p"; done
+  if [ $# -le 3 ]; then hf download "$1" --repo-type dataset --revision "$2" --local-dir "$ROOT/$3"; return; fi
+  for p in "${@:4}"; do hf download "$1" --repo-type dataset --revision "$2" --local-dir "$ROOT/$3" --include "$p" || return; done
 }
 get FreedomIntelligence/MileBench 53c7a58051ef88bacf76541d91f03f5ba2d71e7d milebench "MileBench_part*.tar.gz"
 for f in "$ROOT"/milebench/MileBench_part*.tar.gz; do tar xzf "$f" -C "$ROOT/milebench"; done
@@ -85,7 +85,8 @@ python -m build.verify --records "$DATA/data/asterism_full.jsonl"
 `build.assemble` writes the images under `$DATA/images/<folder>/` and all 18,696 records, with the
 identifier items filled in, to `$DATA/data/asterism_full.jsonl`, in the format of the released records.
 The evaluation code reads this file like the released one. For ASTERISM-Lite, pass its
-`data/asterism_lite.jsonl` and its dataset folder. One source can be assembled alone, for example
+`data/asterism_lite.jsonl` and its dataset folder. One source can be assembled alone (items of other sources that
+an earlier run filled in are kept), for example
 `--source MaRVL --release-dir "$ROOT/marvl"`. With `--link`, the MileBench image files are hard-linked
 instead of copied. The images take about 6 GB, of which 4 GB are MileBench files, and assembling
 all seven sources takes a few minutes, most of it for rendering the MMLongBench-Doc pages.
@@ -113,7 +114,7 @@ compact separators and UTF-8, the scoring entry parsed), and the sha256 of each 
 source. Rendered PDF pages and re-encoded JPEG images depend on the PyMuPDF and Pillow versions; they
 are reported on their own lines and do not make the check fail. A missing image file or a different
 number of images fails the check for every source, and so do a repeated item id, an item of the
-checksums that ASTERISM records lack, and a run that checks no item.
+checksums missing from ASTERISM records (ASTERISM-Lite holds a subset), and a run that checks no item.
 
 ## Requirements
 

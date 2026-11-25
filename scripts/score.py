@@ -39,6 +39,10 @@ def score_run(records, generations, out_dir, lite=False):
     gen_by_id = {g["id"]: g for g in generations}
     summary["unfinished"] = sum(1 for i in ids if gen_by_id[i].get("finished") is False)
     summary["benchmark"] = "ASTERISM-Lite" if lite else "ASTERISM"
+    expected = 400 if lite else 18696
+    if len(records) != expected:  # the score of the benchmark needs all of its items
+        print(f"warning: {len(records)} of the {expected} items of {summary['benchmark']}", file=sys.stderr)
+        summary["benchmark"] += f" (subset: {len(records)} of {expected} items)"
     summary["scorer_version"] = __version__
     with open(os.path.join(out_dir, f"summary{sfx}.json"), "w") as f:
         json.dump(summary, f, indent=1)
@@ -55,6 +59,7 @@ def main(argv=None):
     ap.add_argument("--out", default=None, help="output folder (default: the folder of --generations)")
     a = ap.parse_args(argv)
     records = load_records(a.data, lite=a.lite)
+    a.lite = a.lite or all(r.get("in_lite") for r in records)  # a file of ASTERISM-Lite records
     try:
         check_complete(records, fields=("scoring",))
     except ValueError as e:

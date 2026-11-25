@@ -6,8 +6,9 @@
 For each item of a selected source, the item is read from the public release by its source id,
 the changes recorded in the ASTERISM record are applied (corrected text, label or answer format,
 exchanged options, our scoring entries), the prompt is written as the models received it, and the
-images are written under <out>/images/<source>/. The output <out>/data/<records>_full.jsonl holds
-all records of the input, with the items of the selected sources filled in.
+images are written under <out>/images/<folder>/. The output <out>/data/<records>_full.jsonl holds
+all records of the input, with the items of the selected sources filled in; items of other sources that an earlier
+run filled in are kept. If an item fails, the output is not written.
 """
 import argparse
 import json
@@ -62,6 +63,31 @@ def fill(record, release, out_root, link):
     return dict(record, images=paths, prompt=prompt, options=options, answer=answer, scoring=entry)
 
 
+FILLED = ("images", "prompt", "options", "answer", "scoring")
+
+
+def keep_earlier(records, path, names):
+    """The records to fill in: the input records, where the items of identifier sources outside `names` that an
+    earlier run wrote to `path` (same records, same order, same annotations) are taken from that output."""
+    out = list(records)
+    try:
+        earlier = read_records(path)
+        if [e.get("id") for e in earlier] != [r["id"] for r in records]:
+            return out
+    except (OSError, ValueError, AttributeError, TypeError):
+        return out
+    kept = 0
+    for k, (r, e) in enumerate(zip(records, earlier)):
+        same = (all(f in e for f in FILLED) and all(e.get(f) == v for f, v in r.items() if f not in FILLED)
+                and all(r[f] is None or e[f] == r[f] for f in ("prompt", "options", "answer", "scoring")))
+        if r["release"] == "identifiers" and r["source"] not in names and same and e.get("images") != r["images"]:
+            out[k] = dict(r, **{f: e[f] for f in FILLED})
+            kept += 1
+    if kept:
+        print(f"kept {kept} items of other sources from {path}")
+    return out
+
+
 def release_dirs(args, names):
     dirs = {}
     for value in args.release_dir or []:
@@ -108,7 +134,9 @@ def main(argv=None):
     dirs = release_dirs(args, names)
 
     records = read_records(args.records)
-    out_records = list(records)
+    stem = os.path.splitext(os.path.basename(args.records))[0]
+    path = os.path.join(args.out, "data", f"{stem}_full.jsonl")
+    out_records = keep_earlier(records, path, names)
     failures = 0
     for name in names:
         t0 = time.time()
@@ -124,13 +152,11 @@ def main(argv=None):
                 print(f"{name} {records[k]['id']}: {type(e).__name__}: {e}", file=sys.stderr)
         print(f"{name}: {done}/{len(positions)} items in {time.time() - t0:.0f}s")
 
+    if failures:
+        sys.exit(f"{failures} items failed; {path} is left as it was")
     os.makedirs(os.path.join(args.out, "data"), exist_ok=True)
-    stem = os.path.splitext(os.path.basename(args.records))[0]
-    path = os.path.join(args.out, "data", f"{stem}_full.jsonl")
     write_records(path, out_records)
     print(f"wrote {path} ({len(out_records)} records)")
-    if failures:
-        sys.exit(f"{failures} items failed")
 
 
 if __name__ == "__main__":

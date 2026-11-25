@@ -1,6 +1,6 @@
 # CICA-Qwen2.5-VL-7B. Same settings as its base model. The checkpoint includes its processor.
 name: CICA-Qwen2.5-VL-7B
-model: checkpoints/CICA-Qwen2.5-VL-7B  # local path or Hugging Face id (or pass --model)
+model: seul77/CICA-Qwen2.5-VL-7B  # Hugging Face id or local path (or pass --model)
 enable_thinking: false
 sampling:
   temperature: 0.0
